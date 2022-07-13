@@ -16,11 +16,16 @@ class Cryptage():
         cipher = AES.new(hashword,AES.MODE_CBC,self.iv)
         for e in self.dict:
             #ajouter du padding pour faire des blocs egaux
-            data = Padding.pad(self.dict[e].encode(),16)
+            try:
+                data = Padding.pad(self.dict[e].encode(),16)
+                encoded = base64.b64encode(cipher.encrypt(data))
+                self.dict[e] = encoded.decode('ascii')
+            except AttributeError:
+                self.dict[e] = self.dict[e]*30 + 100
+                #print(type(data))
+                print("Attention: les entiers seront convertis en string")
             #chiffrer les donnees
-            encoded = base64.b64encode(cipher.encrypt(data))
-            self.dict[e] = encoded.decode('ascii')
-            print(self.dict[e])
+           
         return self.dict
     
         
@@ -29,22 +34,33 @@ class Cryptage():
         hashword = hashlib.sha256(self.password.encode()).digest()
         cipher = AES.new(hashword,AES.MODE_CBC,self.iv)
         for e in self.dict:
-            data = cipher.decrypt(base64.b64decode(self.dict[e]))
-            self.dict[e] = Padding.unpad(data,16).decode()
-            print(self.dict[e])
+            try:
+                data = cipher.decrypt(base64.b64decode(self.dict[e]))
+                try:
+                    self.dict[e] = Padding.unpad(data,16).decode()
+                except ValueError as e:
+                    print(f"Le decryptage a echoue :( \nErreur=>{e}")
+                    break
+                try:
+                    self.dict[e] = Padding.unpad(data,16).decode()
+                except ValueError as e:
+                    print(f"Le decryptage a echoue :( \nErreur=>{e}")
+                    break
+            except TypeError:
+                self.dict[e] = (self.dict[e]-100)//30
+
         return self.dict
 
-# myDict = {
-#     "email":"pmg@gmail.com",
-#     "mot de passe":"passer"
+# dict = {
+#     "nom" : "diouf",
+#     "prenom":"ibrahima",
+#     "age": 35,
+#     "salaire" : 850000,
+#     "nb Enfants":22,
+#     "email":"mignane@esp.sn"
 # }
-# testCrypt1 = Cryptage(password="passer",dict=myDict)
-# testCrypt2 = Cryptage(password="passer",dict=myDict)
-# print(testCrypt1.dict)
-# print("*******************")
-# print(testCrypt1.crypter())
-# print("*******************")
-# print(testCrypt2.decrypter())
+# print(dict)
 
-
-
+# monCrypt = Cryptage("passer123",dict)
+# print(monCrypt.crypter())
+# print(monCrypt.decrypter())
